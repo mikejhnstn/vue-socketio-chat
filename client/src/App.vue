@@ -91,7 +91,7 @@ export default {
     return {
       msg: "",
       username: "",
-      socket: io(import.meta.env.VITE_HOST),
+      socket: io(process.env.VUE_APP_API_URL),
       messages: [],
       users: [],
       dialog: true,
