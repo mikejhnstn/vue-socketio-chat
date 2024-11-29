@@ -7,8 +7,11 @@ const port = 1337;
 let users = [];
 let messages = [];
 
+const mongoURI = process.env.MONGODB_URI || "mongodb://localhost:27017/chatdb";
+
+
 // Connect to MongoDB
-mongoose.connect("mongodb://localhost:27017/chatdb", {
+mongoose.connect(mongoURI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
