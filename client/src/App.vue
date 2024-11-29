@@ -91,7 +91,7 @@ export default {
     return {
       msg: "",
       username: "",
-      socket: io("http://localhost:1337"),
+      socket: io(import.meta.env.VITE_HOST),
       messages: [],
       users: [],
       dialog: true,
