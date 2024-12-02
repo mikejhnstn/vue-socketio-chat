@@ -91,7 +91,7 @@ export default {
     return {
       msg: "",
       username: "",
-      socket: io("http://localhost:1337"),
+      socket: io(process.env.VUE_APP_API_URL),
       messages: [],
       users: [],
       dialog: true,

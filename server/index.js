@@ -3,11 +3,20 @@ const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const mongoose = require("mongoose");
 const port = 1337;
+
 let users = [];
 let messages = [];
 
-mongoose.connect("mongodb://localhost:27017/chatdb");
+const mongoURI = process.env.MONGODB_URI || "mongodb://localhost:27017/chatdb";
 
+
+// Connect to MongoDB
+mongoose.connect(mongoURI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+// Define Schema and Model
 const ChatSchema = mongoose.Schema({
   username: String,
   msg: String,
@@ -15,47 +24,56 @@ const ChatSchema = mongoose.Schema({
 
 const ChatModel = mongoose.model("chat", ChatSchema);
 
-ChatModel.find((err, result) => {
-  if (err) throw err;
+// Use Promises to fetch messages
+ChatModel.find()
+  .then((result) => {
+    messages = result;
+  })
+  .catch((err) => {
+    console.error("Error fetching messages:", err);
+  });
 
-  messages = result;
-});
-
+// Socket.io Events
 io.on("connection", (socket) => {
+  // Send initial data to the connected client
   socket.emit("loggedIn", {
     users: users.map((s) => s.username),
     messages: messages,
   });
 
+  // Handle new user joining
   socket.on("newUser", (username) => {
     socket.username = username;
-
     users.push(socket);
 
     io.emit("userOnline", socket.username);
   });
 
-  socket.on("msg", (msg) => {
-    let message = new ChatModel({
-      username: socket.username,
-      msg: msg,
-    });
+  // Handle new message
+  socket.on("msg", async (msg) => {
+    try {
+      const message = new ChatModel({
+        username: socket.username,
+        msg: msg,
+      });
 
-    message.save((err, result) => {
-      if (err) throw err;
-
+      const result = await message.save(); // Save message using async/await
       messages.push(result);
 
       io.emit("msg", result);
-    });
+    } catch (err) {
+      console.error("Error saving message:", err);
+    }
   });
 
+  // Handle user disconnect
   socket.on("disconnect", () => {
     io.emit("userLeft", socket.username);
     users.splice(users.indexOf(socket), 1);
   });
 });
 
+// Start the server
 http.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
